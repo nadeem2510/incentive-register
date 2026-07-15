@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incentive Register · Personal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Bricolage+Grotesque:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#122B22;          /* deep bottle green */
+  --ink-2:#1E4034;
+  --paper:#F7F5EF;        /* ledger paper */
+  --card:#FFFFFF;
+  --rule:#E4E0D4;         /* ruled line */
+  --gold:#C79A2A;         /* marigold accent */
+  --gold-soft:#FBF3DE;
+  --green:#177245;
+  --green-soft:#E4F2E9;
+  --red:#B3402A;
+  --red-soft:#FBEAE5;
+  --muted:#7C7A6E;
+  --shadow:0 1px 2px rgba(18,43,34,.06),0 8px 24px -12px rgba(18,43,34,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+.mono{font-family:'IBM Plex Mono',monospace}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+/* ── Header ─────────────────────────── */
+header{background:var(--ink);color:#F2EFE4;padding:18px 20px 16px;position:sticky;top:0;z-index:40;box-shadow:var(--shadow)}
+.h-inner{max-width:980px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;letter-spacing:.2px;line-height:1}
+.brand p{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#C7BFA3;margin-top:5px;font-weight:600}
+.h-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;transition:transform .08s ease,opacity .15s;white-space:nowrap}
+.btn:active{transform:scale(.96)}
+.btn-gold{background:var(--gold);color:#241C05}
+.btn-ghost{background:rgba(255,255,255,.08);color:#E9E4D2;border:1px solid rgba(255,255,255,.15)}
+.btn-outline{background:#fff;border:1px solid var(--rule);color:var(--ink)}
+.btn-danger{background:var(--red);color:#fff}
+
+/* ── Tabs ───────────────────────────── */
+.tabs{display:flex;gap:6px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:5px;margin-bottom:16px;box-shadow:var(--shadow)}
+.tab{flex:1;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:700;color:var(--muted);transition:all .15s;letter-spacing:.3px}
+.tab.active{background:var(--ink);color:#F2EFE4}
+.tab .t-due{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;margin-top:3px;color:inherit;opacity:.75}
+
+/* ── Summary strip ──────────────────── */
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 90px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.s-card{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.s-card .lbl{font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+.s-card .val{font-family:'IBM Plex Mono',monospace;font-size:clamp(17px,3.4vw,24px);font-weight:600;margin-top:6px}
+.s-card.earned .val{color:var(--ink)}
+.s-card.paid .val{color:var(--green)}
+.s-card.due .val{color:var(--red)}
+.s-card.due.clear .val{color:var(--green)}
+.s-card::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.s-card.earned::after{background:var(--gold)}
+.s-card.paid::after{background:var(--green)}
+.s-card.due::after{background:var(--red)}
+.s-card.due.clear::after{background:var(--green)}
+
+/* ── Filters ────────────────────────── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filters select,.filters input[type=search]{padding:9px 12px;border:1px solid var(--rule);border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:var(--ink);outline:none}
+.filters select:focus,.filters input:focus{border-color:var(--gold)}
+.filters input[type=search]{flex:1;min-width:140px}
+.count-chip{font-size:11px;font-weight:700;color:var(--muted);margin-left:auto}
+
+/* ── Month ledger ───────────────────── */
+.month-block{background:var(--card);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.m-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:13px 16px;background:linear-gradient(to bottom,#FCFBF7,#F6F4EC);border-bottom:1px solid var(--rule)}
+.m-title{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:700}
+.m-title small{font-weight:600;color:var(--muted);font-size:11px;margin-left:6px;letter-spacing:1px}
+.m-sub{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);text-align:right;line-height:1.7}
+.m-sub b{color:var(--ink)}
+.m-sub .due-amt{color:var(--red);font-weight:600}
+.m-sub .due-amt.clear{color:var(--green)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);font-weight:700;background:#FCFBF7}
+td{padding:11px 12px;border-bottom:1px dashed var(--rule);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-family:'IBM Plex Mono',monospace}
+td .disp{font-weight:600}
+td .rmk{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;max-width:280px}
+.pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.6px;padding:3px 8px;border-radius:99px;text-transform:uppercase}
+.pill.paid{background:var(--green-soft);color:var(--green)}
+.pill.partial{background:var(--gold-soft);color:#8a6510}
+.pill.pending{background:var(--red-soft);color:var(--red)}
+.row-actions{display:flex;gap:4px;justify-content:flex-end}
+.icon-btn{width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid transparent;font-size:13px}
+.icon-btn:hover{background:var(--paper);border-color:var(--rule);color:var(--ink)}
+.icon-btn.del:hover{background:var(--red-soft);color:var(--red)}
+
+/* ── Empty state ────────────────────── */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .big{font-family:'Bricolage Grotesque',sans-serif;font-size:19px;color:var(--ink);font-weight:700;margin-bottom:6px}
+.empty p{font-size:13px;max-width:340px;margin:0 auto 18px;line-height:1.6}
+
+/* ── FAB ────────────────────────────── */
+.fab{position:fixed;right:18px;bottom:18px;background:var(--gold);color:#241C05;width:56px;height:56px;border-radius:16px;font-size:26px;font-weight:600;box-shadow:0 8px 24px -6px rgba(199,154,42,.6);display:flex;align-items:center;justify-content:center;z-index:45;transition:transform .1s}
+.fab:active{transform:scale(.92)}
+
+/* ── Modal ──────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(18,43,34,.45);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:92vh;overflow:auto;padding:20px 18px 26px;animation:up .22s ease}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:translateY(0);opacity:1}}
+@media(min-width:640px){.overlay{align-items:center;padding:20px}.modal{border-radius:18px}}
+.modal h2{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;margin-bottom:16px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--rule);border-radius:9px;background:#FCFBF7;outline:none;font-size:14px}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);background:#fff}
+.field textarea{resize:vertical;min-height:64px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bal-preview{font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:var(--paper);border:1px dashed var(--rule);border-radius:9px;padding:10px 12px;margin-bottom:14px;display:flex;justify-content:space-between}
+.bal-preview b.neg{color:var(--red)}
+.bal-preview b.pos{color:var(--green)}
+.m-actions{display:flex;gap:10px;margin-top:6px}
+.m-actions .btn{flex:1;justify-content:center;padding:12px}
+
+/* toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;background:var(--ink);color:#F2EFE4;font-size:12.5px;font-weight:600;padding:10px 18px;border-radius:99px;box-shadow:var(--shadow);z-index:60;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+
+@media(max-width:560px){
+  .summary{grid-template-columns:1fr 1fr}
+  .s-card.due{grid-column:1/-1}
+  th:nth-child(2),td:nth-child(2),th:nth-child(5),td:nth-child(5){display:none} /* hide Cases & Status cols on small */
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-inner">
+    <div class="brand">
+      <h1>Incentive Register</h1>
+      <p>Personal · Dispensary-wise · Monthly</p>
+    </div>
+    <div class="h-actions">
+      <button class="btn btn-ghost" onclick="exportCSV()">⤓ Export CSV</button>
+      <button class="btn btn-ghost" onclick="backupJSON()">Backup</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('restoreFile').click()">Restore</button>
+      <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreJSON(this)">
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Register tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-disp" onclick="switchTab('disp')">Dispensaries<span class="t-due" id="tabDueDisp"></span></button>
+    <button class="tab" id="tab-hitlab" onclick="switchTab('hitlab')">HitLab<span class="t-due" id="tabDueHitlab"></span></button>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="s-card earned"><div class="lbl">Total Incentive · <span id="sumCases">0</span> cases</div><div class="val" id="sumEarned">₹0</div></div>
+    <div class="s-card paid"><div class="lbl">Total Paid</div><div class="val" id="sumPaid">₹0</div></div>
+    <div class="s-card due" id="dueCard"><div class="lbl">Balance Due</div><div class="val" id="sumDue">₹0</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <select id="fYear" onchange="render()"></select>
+    <select id="fMonth" onchange="render()">
+      <option value="all">All months</option>
+    </select>
+    <select id="fDisp" onchange="render()">
+      <option value="all">All dispensaries</option>
+    </select>
+    <input type="search" id="fSearch" placeholder="Search remark…" oninput="render()">
+    <span class="count-chip" id="countChip"></span>
+  </div>
+
+  <!-- Ledger -->
+  <div id="ledger"></div>
+
+</div>
+
+<button class="fab" title="Add entry" onclick="openModal()">+</button>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modalTitle">Add incentive entry</h2>
+
+    <div class="field" id="dispField">
+      <label>Dispensary</label>
+      <select id="inDisp"></select>
+    </div>
+    <div class="field" id="newDispField" style="display:none">
+      <label>New dispensary name</label>
+      <input type="text" id="inNewDisp" placeholder="e.g. Chikalthana">
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Month</label>
+        <select id="inMonth"></select>
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <select id="inYear"></select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>No. of cases</label>
+        <input type="number" id="inCases" min="0" step="1" placeholder="0" oninput="updateBalPreview()">
+      </div>
+      <div class="field">
+        <label>Amount per case (₹)</label>
+        <input type="number" id="inRate" min="0" step="any" placeholder="0" oninput="updateBalPreview()">
+      </div>
+    </div>
+
+    <div class="bal-preview"><span>Total incentive</span><b id="totPreview" class="pos">₹0</b></div>
+
+    <div class="field">
+      <label>Total paid (₹)</label>
+      <input type="number" id="inPaid" min="0" step="any" placeholder="0" oninput="updateBalPreview()">
+    </div>
+
+    <div class="bal-preview"><span>Balance due</span><b id="balPreview">₹0</b></div>
+
+    <div class="field">
+      <label>Remark</label>
+      <textarea id="inRemark" placeholder="e.g. Paid by cheque on 5th, balance next month…"></textarea>
+    </div>
+
+    <div class="m-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" id="saveBtn" onclick="saveEntry()">Save entry</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const KEY = 'incentive_register_v1';
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DEFAULT_DISPS = ['Waluj','Waluj DCBO','Paithan'];
+
+let state = load();
+let editId = null;
+let activeTab = 'disp'; // 'disp' | 'hitlab'
+
+function switchTab(tab){
+  activeTab = tab;
+  document.getElementById('tab-disp').classList.toggle('active', tab==='disp');
+  document.getElementById('tab-hitlab').classList.toggle('active', tab==='hitlab');
+  // Dispensary filter only makes sense on dispensary register
+  document.getElementById('fDisp').style.display = tab==='disp' ? '' : 'none';
+  render();
+}
+function regOf(e){ return e.reg || 'disp'; }
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const s = JSON.parse(raw); if(s && Array.isArray(s.entries)) return s; }
+  }catch(e){}
+  return { entries: [], dispensaries: [...DEFAULT_DISPS] };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmt(n){ return '₹' + Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2}); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ── Filters setup ── */
+function refreshFilterOptions(){
+  const years = [...new Set(state.entries.map(e=>e.year))].sort((a,b)=>b-a);
+  const nowY = new Date().getFullYear();
+  if(!years.includes(nowY)) years.unshift(nowY);
+  const fY = document.getElementById('fYear');
+  const cur = fY.value;
+  fY.innerHTML = '<option value="all">All years</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  fY.value = [...fY.options].some(o=>o.value===cur) ? cur : 'all';
+
+  const fM = document.getElementById('fMonth');
+  const curM = fM.value || 'all';
+  fM.innerHTML = '<option value="all">All months</option>' + MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  fM.value = curM;
+
+  const fD = document.getElementById('fDisp');
+  const curD = fD.value || 'all';
+  fD.innerHTML = '<option value="all">All dispensaries</option>' + state.dispensaries.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  fD.value = [...fD.options].some(o=>o.value===curD) ? curD : 'all';
+}
+
+/* ── Render ── */
+function statusOf(e){
+  const bal = (e.amount||0) - (e.paid||0);
+  if((e.paid||0) <= 0 && (e.amount||0) > 0) return ['pending','Pending'];
+  if(bal > 0.004) return ['partial','Partial'];
+  return ['paid','Paid'];
+}
+
+function render(){
+  refreshFilterOptions();
+  const fY = document.getElementById('fYear').value;
+  const fM = document.getElementById('fMonth').value;
+  const fD = document.getElementById('fDisp').value;
+  const q  = document.getElementById('fSearch').value.trim().toLowerCase();
+
+  const rows = state.entries.filter(e =>
+    regOf(e)===activeTab &&
+    (fY==='all' || e.year===+fY) &&
+    (fM==='all' || e.month===+fM) &&
+    (activeTab!=='disp' || fD==='all' || e.dispensary===fD) &&
+    (!q || (e.remark||'').toLowerCase().includes(q) || (e.dispensary||'').toLowerCase().includes(q))
+  );
+
+  // Tab due chips (all-time, per register)
+  ['disp','hitlab'].forEach(r => {
+    const all = state.entries.filter(e => regOf(e)===r);
+    const due = all.reduce((s,e)=>s+((+e.amount||0)-(+e.paid||0)),0);
+    const el = document.getElementById(r==='disp'?'tabDueDisp':'tabDueHitlab');
+    el.textContent = all.length ? 'Due ' + fmt(due) : '';
+  });
+
+  // Summary
+  const tEarn = rows.reduce((s,e)=>s+(+e.amount||0),0);
+  const tPaid = rows.reduce((s,e)=>s+(+e.paid||0),0);
+  const tCases = rows.reduce((s,e)=>s+(+e.cases||0),0);
+  const tDue  = tEarn - tPaid;
+  document.getElementById('sumCases').textContent = tCases;
+  document.getElementById('sumEarned').textContent = fmt(tEarn);
+  document.getElementById('sumPaid').textContent   = fmt(tPaid);
+  document.getElementById('sumDue').textContent    = fmt(tDue);
+  document.getElementById('dueCard').classList.toggle('clear', tDue <= 0.004);
+  document.getElementById('countChip').textContent = rows.length ? rows.length + ' entr' + (rows.length===1?'y':'ies') : '';
+
+  // Group by year-month (desc)
+  const groups = {};
+  rows.forEach(e => { const k = e.year*100 + e.month; (groups[k] ||= []).push(e); });
+  const keys = Object.keys(groups).map(Number).sort((a,b)=>b-a);
+
+  const ledger = document.getElementById('ledger');
+  if(!keys.length){
+    const regName = activeTab==='disp' ? 'dispensary' : 'HitLab';
+    const hasAny = state.entries.some(e=>regOf(e)===activeTab);
+    ledger.innerHTML = `<div class="empty">
+      <div class="big">${hasAny ? 'No entries match these filters' : (activeTab==='disp' ? 'Register is empty' : 'HitLab register is empty')}</div>
+      <p>${hasAny ? 'Change the filters above to see other entries.' : `Tap the + button to record your first ${regName} incentive — cases, rate, paid and remark.`}</p>
+      ${hasAny ? '' : '<button class="btn btn-gold" onclick="openModal()">+ Add first entry</button>'}
+    </div>`;
+    return;
+  }
+
+  ledger.innerHTML = keys.map(k => {
+    const y = Math.floor(k/100), m = k%100;
+    const list = groups[k].slice().sort((a,b)=> a.dispensary.localeCompare(b.dispensary));
+    const gE = list.reduce((s,e)=>s+(+e.amount||0),0);
+    const gP = list.reduce((s,e)=>s+(+e.paid||0),0);
+    const gC = list.reduce((s,e)=>s+(+e.cases||0),0);
+    const gD = gE - gP;
+    return `<section class="month-block">
+      <div class="m-head">
+        <div class="m-title">${MONTHS[m-1]} ${y} <small>M-${String(m).padStart(2,'0')}</small></div>
+        <div class="m-sub">
+          Cases <b>${gC}</b> · Incentive <b>${fmt(gE)}</b> · Paid <b>${fmt(gP)}</b><br>
+          Due <span class="due-amt ${gD<=0.004?'clear':''}">${fmt(gD)}</span>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>${activeTab==='disp' ? 'Dispensary / Remark' : 'Particulars / Remark'}</th>
+          <th class="num">Cases</th>
+          <th class="num">Total</th>
+          <th class="num">Paid</th>
+          <th>Status</th>
+          <th class="num">Due</th>
+          <th></th>
+        </tr></thead>
+        <tbody>
+        ${list.map(e => {
+          const bal = (e.amount||0)-(e.paid||0);
+          const [cls,lbl] = statusOf(e);
+          const casesCell = e.cases != null ? `${e.cases}<span style="color:var(--muted)"> × ${fmt(e.rate)}</span>` : '—';
+          const mainLabel = activeTab==='disp' ? e.dispensary : (e.remark || 'HitLab entry');
+          const subRemark = activeTab==='disp' ? e.remark : '';
+          return `<tr>
+            <td><span class="disp">${esc(mainLabel)}</span>${subRemark?`<span class="rmk">${esc(subRemark)}</span>`:''}</td>
+            <td class="num" style="white-space:nowrap">${casesCell}</td>
+            <td class="num">${fmt(e.amount)}</td>
+            <td class="num">${fmt(e.paid)}</td>
+            <td><span class="pill ${cls}">${lbl}</span></td>
+            <td class="num" style="color:${bal>0.004?'var(--red)':'var(--green)'}">${fmt(bal)}</td>
+            <td><div class="row-actions">
+              <button class="icon-btn" title="Edit" onclick="openModal('${e.id}')">✎</button>
+              <button class="icon-btn del" title="Delete" onclick="delEntry('${e.id}')">🗑</button>
+            </div></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </section>`;
+  }).join('');
+}
+
+/* ── Modal ── */
+function fillModalOptions(){
+  const dSel = document.getElementById('inDisp');
+  dSel.innerHTML = state.dispensaries.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')
+    + '<option value="__new__">＋ Add new dispensary…</option>';
+  dSel.onchange = () => {
+    document.getElementById('newDispField').style.display = dSel.value==='__new__' ? 'block' : 'none';
+  };
+  const mSel = document.getElementById('inMonth');
+  mSel.innerHTML = MONTHS.map((m,i)=>`<option value="${i+1}">${String(i+1).padStart(2,'0')} — ${m}</option>`).join('');
+  const ySel = document.getElementById('inYear');
+  const nowY = new Date().getFullYear();
+  let ys = [];
+  for(let y=nowY+1; y>=nowY-4; y--) ys.push(y);
+  ySel.innerHTML = ys.map(y=>`<option value="${y}">${y}</option>`).join('');
+}
+
+function openModal(id){
+  editId = id || null;
+  fillModalOptions();
+  document.getElementById('newDispField').style.display='none';
+  document.getElementById('inNewDisp').value='';
+  const now = new Date();
+  const isHitlab = editId ? regOf(state.entries.find(x=>x.id===editId)||{})==='hitlab' : activeTab==='hitlab';
+  // Dispensary field only for dispensary register
+  document.getElementById('dispField').style.display = isHitlab ? 'none' : 'block';
+  if(editId){
+    const e = state.entries.find(x=>x.id===editId);
+    if(!e) return;
+    document.getElementById('modalTitle').textContent = isHitlab ? 'Edit HitLab entry' : 'Edit entry';
+    document.getElementById('saveBtn').textContent='Update entry';
+    if(!isHitlab){
+      document.getElementById('inDisp').value = e.dispensary;
+      if(document.getElementById('inDisp').value !== e.dispensary){ // dispensary was removed from list
+        state.dispensaries.push(e.dispensary); fillModalOptions();
+        document.getElementById('inDisp').value = e.dispensary;
+      }
+    }
+    document.getElementById('inMonth').value = e.month;
+    document.getElementById('inYear').value = e.year;
+    // Backward compat: old entries had only amount (no cases/rate)
+    document.getElementById('inCases').value = e.cases ?? (e.amount ? 1 : '');
+    document.getElementById('inRate').value = e.rate ?? (e.amount || '');
+    document.getElementById('inPaid').value = e.paid;
+    document.getElementById('inRemark').value = e.remark || '';
+  }else{
+    document.getElementById('modalTitle').textContent = isHitlab ? 'Add HitLab entry' : 'Add incentive entry';
+    document.getElementById('saveBtn').textContent='Save entry';
+    document.getElementById('inMonth').value = now.getMonth()+1;
+    document.getElementById('inYear').value = now.getFullYear();
+    document.getElementById('inCases').value='';
+    document.getElementById('inRate').value='';
+    document.getElementById('inPaid').value='';
+    document.getElementById('inRemark').value='';
+  }
+  updateBalPreview();
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('inCases').focus(), 120);
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); editId=null; }
+
+function updateBalPreview(){
+  const c = +document.getElementById('inCases').value || 0;
+  const r = +document.getElementById('inRate').value || 0;
+  const a = c * r;
+  const p = +document.getElementById('inPaid').value || 0;
+  document.getElementById('totPreview').textContent = fmt(a);
+  const b = a - p;
+  const el = document.getElementById('balPreview');
+  el.textContent = fmt(b);
+  el.className = b > 0.004 ? 'neg' : 'pos';
+}
+
+function saveEntry(){
+  const isHitlab = editId ? regOf(state.entries.find(x=>x.id===editId)||{})==='hitlab' : activeTab==='hitlab';
+  let disp = 'HitLab';
+  if(!isHitlab){
+    disp = document.getElementById('inDisp').value;
+    if(disp==='__new__'){
+      const nd = document.getElementById('inNewDisp').value.trim();
+      if(!nd){ toast('Enter new dispensary name'); return; }
+      if(!state.dispensaries.includes(nd)) state.dispensaries.push(nd);
+      disp = nd;
+    }
+  }
+  const cases = +document.getElementById('inCases').value;
+  const rate  = +document.getElementById('inRate').value;
+  const paid  = +document.getElementById('inPaid').value || 0;
+  if(!(cases >= 0) || document.getElementById('inCases').value===''){ toast('Enter no. of cases'); return; }
+  if(!(rate >= 0) || document.getElementById('inRate').value===''){ toast('Enter amount per case'); return; }
+  if(paid < 0){ toast('Paid amount cannot be negative'); return; }
+  const amount = cases * rate; // total incentive, auto-calculated
+
+  const rec = {
+    reg: isHitlab ? 'hitlab' : 'disp',
+    dispensary: disp,
+    month: +document.getElementById('inMonth').value,
+    year: +document.getElementById('inYear').value,
+    cases, rate, amount, paid,
+    remark: document.getElementById('inRemark').value.trim()
+  };
+
+  if(editId){
+    const i = state.entries.findIndex(x=>x.id===editId);
+    if(i>-1) state.entries[i] = {...state.entries[i], ...rec, updatedAt:new Date().toISOString()};
+    toast('Entry updated');
+  }else{
+    state.entries.push({ id:uid(), ...rec, createdAt:new Date().toISOString() });
+    toast('Entry saved');
+  }
+  save(); closeModal(); render();
+}
+
+function delEntry(id){
+  const e = state.entries.find(x=>x.id===id);
+  if(!e) return;
+  if(!confirm(`Delete ${e.dispensary} — ${MONTHS[e.month-1]} ${e.year} entry?`)) return;
+  state.entries = state.entries.filter(x=>x.id!==id);
+  save(); render(); toast('Entry deleted');
+}
+
+/* ── Export / Backup ── */
+function download(name, text, type){
+  const blob = new Blob([text], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 500);
+}
+
+function exportCSV(){
+  const rows = state.entries.filter(e=>regOf(e)===activeTab)
+    .sort((a,b)=> (b.year*100+b.month)-(a.year*100+a.month) || (a.dispensary||'').localeCompare(b.dispensary||''));
+  if(!rows.length){ toast('Nothing to export in this tab yet'); return; }
+  const csvCell = v => { v = String(v??''); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const regName = activeTab==='disp' ? 'Dispensary' : 'HitLab';
+  let csv = `Sr No,${activeTab==='disp'?'Dispensary':'Register'},Month No,Month,Year,No of Cases,Amount Per Case,Total Incentive,Total Paid,Balance Due,Status,Remark\n`;
+  rows.forEach((e,i)=>{
+    const bal = (e.amount||0)-(e.paid||0);
+    csv += [i+1, csvCell(e.dispensary||regName), e.month, MONTHS[e.month-1], e.year, e.cases??'', e.rate??'', e.amount||0, e.paid||0, bal, statusOf(e)[1], csvCell(e.remark)].join(',') + '\n';
+  });
+  const tE = rows.reduce((s,e)=>s+(+e.amount||0),0), tP = rows.reduce((s,e)=>s+(+e.paid||0),0), tC = rows.reduce((s,e)=>s+(+e.cases||0),0);
+  csv += `,,,,TOTAL,${tC},,${tE},${tP},${tE-tP},,\n`;
+  download(regName + '_Incentive_' + new Date().toISOString().slice(0,10) + '.csv', '\ufeff'+csv, 'text/csv;charset=utf-8');
+  toast('CSV exported — opens in Excel');
+}
+
+function backupJSON(){
+  download('incentive_backup_' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(state,null,2), 'application/json');
+  toast('Backup file downloaded');
+}
+
+function restoreJSON(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const s = JSON.parse(r.result);
+      if(!s || !Array.isArray(s.entries)) throw 0;
+      if(!confirm(`Restore ${s.entries.length} entries? This will replace current data.`)) { input.value=''; return; }
+      state = { entries:s.entries, dispensaries: Array.isArray(s.dispensaries)&&s.dispensaries.length ? s.dispensaries : [...DEFAULT_DISPS] };
+      save(); render(); toast('Data restored');
+    }catch(e){ toast('Invalid backup file'); }
+    input.value='';
+  };
+  r.readAsText(f);
+}
+
+/* init */
+render();
+</script>
+</body>
+</html>
