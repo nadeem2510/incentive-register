@@ -160,8 +160,9 @@ td .rmk{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;max-wid
   <div class="tabs">
     <button class="tab active" id="tab-disp" onclick="switchTab('disp')">Dispensaries<span class="t-due" id="due-disp"></span></button>
     <button class="tab" id="tab-hitlab" onclick="switchTab('hitlab')">HitLab<span class="t-due" id="due-hitlab"></span></button>
-    <button class="tab" id="tab-navaj" onclick="switchTab('navaj')">Team NAVAJ<span class="t-due" id="due-navaj"></span></button>
+    <button class="tab" id="tab-navaj" onclick="switchTab('navaj')">ESIC Team<span class="t-due" id="due-navaj"></span></button>
     <button class="tab" id="tab-esic" onclick="switchTab('esic')">ESIC Billing<span class="t-due" id="due-esic"></span></button>
+    <button class="tab" id="tab-exp" onclick="switchTab('exp')">Other Expenses<span class="t-due" id="due-exp"></span></button>
   </div>
 
   <!-- Summary -->
@@ -287,14 +288,18 @@ const REGS = {
             mode:'cases_rate', earnLbl:'Total Incentive', paidLbl:'Total Paid', dueLbl:'Balance Due',
             paidInput:'Total paid (₹)', totLbl:'Total incentive', paidCol:'Paid', totCol:'Total',
             firstCol:'Particulars / Remark' },
-  navaj:  { tab:'Team NAVAJ', mainKey:'employee', mainLabel:'Employee', listKey:'employees',
-            mode:'flat', flatLbl:'Salary (₹)', earnLbl:'Total Salary', paidLbl:'Total Paid', dueLbl:'Balance Due',
-            paidInput:'Paid (₹)', totLbl:'Salary', paidCol:'Paid', totCol:'Salary',
-            firstCol:'Employee / Remark', addNew:'＋ Add new employee…' },
+  navaj:  { tab:'ESIC Team', mainKey:null, mainLabel:null, listKey:null,
+            mode:'flat', flatLbl:'Contract amount (₹)', earnLbl:'Total Contract', paidLbl:'Total Paid', dueLbl:'Balance Due',
+            paidInput:'Paid (₹)', totLbl:'Contract amount', paidCol:'Paid', totCol:'Amount',
+            firstCol:'Contract / Remark' },
   esic:   { tab:'ESIC Billing', mainKey:null, mainLabel:null, listKey:null,
             mode:'cases_total', earnLbl:'Total Billed', paidLbl:'Total Received', dueLbl:'Pending from ESIC',
             paidInput:'Amount received (₹)', totLbl:'Billed amount', paidCol:'Received', totCol:'Billed',
-            firstCol:'Billing / Remark' }
+            firstCol:'Billing / Remark' },
+  exp:    { tab:'Other Expenses', mainKey:null, mainLabel:null, listKey:null,
+            mode:'flat', flatLbl:'Amount (₹)', earnLbl:'Total Expenses', noPaid:true,
+            totLbl:'Expense amount', totCol:'Amount',
+            firstCol:'Expense / Remark' }
 };
 
 let state = load();
@@ -389,8 +394,14 @@ function render(){
   // Tab due chips (all-time, per register)
   Object.keys(REGS).forEach(r => {
     const all = state.entries.filter(e => regOf(e)===r);
-    const due = all.reduce((s,e)=>s+((+e.amount||0)-(+e.paid||0)),0);
-    document.getElementById('due-'+r).textContent = all.length ? 'Due ' + fmt(due) : '';
+    const el = document.getElementById('due-'+r);
+    if(REGS[r].noPaid){
+      const spent = all.reduce((s,e)=>s+(+e.amount||0),0);
+      el.textContent = all.length ? 'Spent ' + fmt(spent) : '';
+    }else{
+      const due = all.reduce((s,e)=>s+((+e.amount||0)-(+e.paid||0)),0);
+      el.textContent = all.length ? 'Due ' + fmt(due) : '';
+    }
   });
 
   // Summary labels + values
@@ -400,12 +411,21 @@ function render(){
   const tCases = rows.reduce((s,e)=>s+(+e.cases||0),0);
   const tDue  = tEarn - tPaid;
   document.getElementById('lblEarned').textContent = c.earnLbl + (showCases ? ` · ${tCases} cases` : '');
-  document.getElementById('lblPaid').textContent = c.paidLbl;
-  document.getElementById('lblDue').textContent = c.dueLbl;
   document.getElementById('sumEarned').textContent = fmt(tEarn);
-  document.getElementById('sumPaid').textContent   = fmt(tPaid);
-  document.getElementById('sumDue').textContent    = fmt(tDue);
-  document.getElementById('dueCard').classList.toggle('clear', tDue <= 0.004);
+  const paidCard = document.getElementById('sumPaid').closest('.s-card');
+  const dueCardEl = document.getElementById('dueCard');
+  if(c.noPaid){
+    paidCard.style.display = 'none';
+    dueCardEl.style.display = 'none';
+  }else{
+    paidCard.style.display = '';
+    dueCardEl.style.display = '';
+    document.getElementById('lblPaid').textContent = c.paidLbl;
+    document.getElementById('lblDue').textContent = c.dueLbl;
+    document.getElementById('sumPaid').textContent   = fmt(tPaid);
+    document.getElementById('sumDue').textContent    = fmt(tDue);
+    dueCardEl.classList.toggle('clear', tDue <= 0.004);
+  }
   document.getElementById('countChip').textContent = rows.length ? rows.length + ' entr' + (rows.length===1?'y':'ies') : '';
 
   // Group by year-month desc
@@ -435,8 +455,10 @@ function render(){
       <div class="m-head">
         <div class="m-title">${MONTHS[m-1]} ${y} <small>M-${String(m).padStart(2,'0')}</small></div>
         <div class="m-sub">
-          ${showCases ? `Cases <b>${gC}</b> · ` : ''}${c.totCol} <b>${fmt(gE)}</b> · ${c.paidCol} <b>${fmt(gP)}</b><br>
-          Due <span class="due-amt ${gD<=0.004?'clear':''}">${fmt(gD)}</span>
+          ${c.noPaid
+            ? `${c.totCol} <b>${fmt(gE)}</b>`
+            : `${showCases ? `Cases <b>${gC}</b> · ` : ''}${c.totCol} <b>${fmt(gE)}</b> · ${c.paidCol} <b>${fmt(gP)}</b><br>
+          Due <span class="due-amt ${gD<=0.004?'clear':''}">${fmt(gD)}</span>`}
         </div>
       </div>
       <div class="tbl-scroll">
@@ -445,9 +467,9 @@ function render(){
           <th>${c.firstCol}</th>
           ${showCases ? '<th class="num">Cases</th>' : ''}
           <th class="num">${c.totCol}</th>
-          <th class="num">${c.paidCol}</th>
+          ${c.noPaid ? '' : `<th class="num">${c.paidCol}</th>
           <th>Status</th>
-          <th class="num">Due</th>
+          <th class="num">Due</th>`}
           <th></th>
         </tr></thead>
         <tbody>
@@ -467,9 +489,9 @@ function render(){
             <td><span class="disp">${esc(mainLabel)}</span>${subRemark?`<span class="rmk">${esc(subRemark)}</span>`:''}</td>
             ${casesCell}
             <td class="num">${fmt(e.amount)}</td>
-            <td class="num">${fmt(e.paid)}</td>
+            ${c.noPaid ? '' : `<td class="num">${fmt(e.paid)}</td>
             <td><span class="pill ${cls}">${lbl}</span></td>
-            <td class="num" style="color:${bal>0.004?'var(--red)':'var(--green)'}">${fmt(bal)}</td>
+            <td class="num" style="color:${bal>0.004?'var(--red)':'var(--green)'}">${fmt(bal)}</td>`}
             <td><div class="row-actions">
               <button class="icon-btn" title="Edit" onclick="openModal('${e.id}')">✎</button>
               <button class="icon-btn del" title="Delete" onclick="delEntry('${e.id}')">🗑</button>
@@ -524,8 +546,17 @@ function setModalLayout(reg){
   if(c.mode==='flat') document.getElementById('flatLabel').textContent = c.flatLbl;
   document.getElementById('totLabel').textContent = c.totLbl;
   document.getElementById('totRow').style.display = c.mode==='cases_rate' ? 'flex' : 'none';
-  document.getElementById('paidLabel').textContent = c.paidInput;
-  document.getElementById('dueLabel').textContent = c.dueLbl;
+  const paidWrap = document.getElementById('inPaid').closest('.field');
+  const dueRow = document.getElementById('balPreview').closest('.bal-preview');
+  if(c.noPaid){
+    paidWrap.style.display = 'none';
+    dueRow.style.display = 'none';
+  }else{
+    paidWrap.style.display = 'block';
+    dueRow.style.display = 'flex';
+    document.getElementById('paidLabel').textContent = c.paidInput;
+    document.getElementById('dueLabel').textContent = c.dueLbl;
+  }
 }
 
 function currentAmount(reg){
@@ -630,7 +661,7 @@ function saveEntry(){
   }
 
   const amount = currentAmount(reg);
-  const paid = +document.getElementById('inPaid').value || 0;
+  const paid = c.noPaid ? 0 : (+document.getElementById('inPaid').value || 0);
   if(amount < 0){ toast('Amount cannot be negative'); return; }
   if(paid < 0){ toast('Paid amount cannot be negative'); return; }
 
@@ -690,7 +721,9 @@ function exportCSV(){
   head.push('Month No','Month','Year');
   if(showCases) head.push('No of Cases');
   if(showRate) head.push('Amount Per Case');
-  head.push(c.totCol + ' (₹)', c.paidCol + ' (₹)', 'Balance Due', 'Status', 'Remark');
+  head.push(c.totCol + ' (₹)');
+  if(!c.noPaid) head.push(c.paidCol + ' (₹)', 'Balance Due', 'Status');
+  head.push('Remark');
   let csv = head.join(',') + '\n';
 
   rows.forEach((e,i)=>{
@@ -700,15 +733,16 @@ function exportCSV(){
     r.push(e.month, MONTHS[e.month-1], e.year);
     if(showCases) r.push(e.cases??'');
     if(showRate) r.push(e.rate??'');
-    r.push(e.amount||0, e.paid||0, bal, statusOf(e)[1], csvCell(e.remark));
+    r.push(e.amount||0);
+    if(!c.noPaid) r.push(e.paid||0, bal, statusOf(e)[1]);
+    r.push(csvCell(e.remark));
     csv += r.join(',') + '\n';
   });
 
   const tE = rows.reduce((s,e)=>s+(+e.amount||0),0), tP = rows.reduce((s,e)=>s+(+e.paid||0),0), tC = rows.reduce((s,e)=>s+(+e.cases||0),0);
-  let totRow = ['','TOTAL'];
-  if(c.mainKey) totRow = ['','', 'TOTAL'];
-  // simple total line at bottom
-  csv += `TOTAL${c.mainKey?',':''},,,${showCases? ','+tC : ''}${showRate? ',' : ''},${tE},${tP},${tE-tP},,\n`;
+  csv += c.noPaid
+    ? `TOTAL,,,,${tE},\n`
+    : `TOTAL${c.mainKey?',':''},,,${showCases? ','+tC : ''}${showRate? ',' : ''},${tE},${tP},${tE-tP},,\n`;
 
   const fname = c.tab.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.csv';
   download(fname, '\ufeff'+csv, 'text/csv;charset=utf-8');
